@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Membres</title>
+<style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background-color: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+	<a href="https://ps3chatv2.onrender.com"/a>
+		<button>chat</button>
+		
+    <h2>Liste des membres</h2>
+    <p><a href="/logout">Se déconnecter</a></p>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Pseudo</th>
+            <th>Jeux</th>
+            <th>Fonction</th>
+            <th>Rôle</th>
+        </tr>
+        {% for m in members %}
+        <tr>
+            <td>{{ m['id'] }}</td>
+            <td>{{ m['pseudo'] }}</td>
+            <td>{{ m['jeux'] }}</td>
+            <td>{{ m['fonction'] }}</td>
+            <td>{{ m['role'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
