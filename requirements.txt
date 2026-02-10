@@ -1,2 +1,3 @@
-Flask
-supabase
+flask
+python-dotenv
+gunicorn

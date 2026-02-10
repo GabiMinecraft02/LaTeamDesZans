@@ -1,59 +1,103 @@
-from flask import Flask, render_template, redirect, session, request
 import os
-from supabase import create_client
+from flask import Flask, render_template, request, redirect, session, url_for
+from dotenv import load_dotenv
+from functools import wraps
+
+# ---------- ENV ----------
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET", "FLASK")
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 
-# Supabase config
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+MEMBER_PASSWORD = os.getenv("MEMBER_PASSWORD")
 
-# Passwords
-MEMBER_PASSWORD = os.getenv("PASSWORD")
-ADMIN_PASSWORD = os.getenv("AD_PASSWORD")
+# ---------- FAKE DB ----------
+members = []
+member_id = 1
 
+
+# ---------- DECORATORS ----------
+def login_required(role=None):
+    def wrapper(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if "user" not in session:
+                return redirect(url_for("login"))
+            if role and session.get("role") != role:
+                return redirect(url_for("login"))
+            return f(*args, **kwargs)
+        return decorated
+    return wrapper
+
+
+# ---------- ROUTES ----------
 @app.route("/")
-def home():
-    return redirect("/public")
-
-@app.route("/public")
 def public():
     return render_template("public.html")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        pw = request.form.get("password")
-        if pw == ADMIN_PASSWORD:
+        password = request.form.get("password")
+
+        if password == ADMIN_PASSWORD:
+            session["user"] = "admin"
             session["role"] = "admin"
             return redirect("/admin")
-        elif pw == MEMBER_PASSWORD:
+
+        if password == MEMBER_PASSWORD:
+            session["user"] = "member"
             session["role"] = "member"
             return redirect("/members")
-        else:
-            return render_template("login.html", error="Mot de passe incorrect")
+
     return render_template("login.html")
 
-@app.route("/members")
-def members():
-    if "role" not in session:
-        return redirect("/login")
-    if session["role"] != "member":
-        return "Accès interdit", 403
 
-    data = supabase.table("members").select("*").order("id").execute()
-    return render_template("members.html", members=data.data)
+@app.route("/members")
+@login_required(role="member")
+def members_page():
+    return render_template("members.html")
+
 
 @app.route("/admin")
+@login_required(role="admin")
 def admin():
-    if "role" not in session or session["role"] != "admin":
-        return redirect("/login")
-
-    data = supabase.table("members").select("*").order("id").execute()
-    return render_template("admin.html", members=data.data)
+    return render_template("admin.html", members=members)
 
 
+@app.route("/admin/add", methods=["POST"])
+@login_required(role="admin")
+def admin_add():
+    global member_id
+
+    members.append({
+        "id": member_id,
+        "pseudo": request.form["pseudo"],
+        "jeux": request.form.get("jeux", ""),
+        "fonction": request.form.get("fonction", ""),
+        "role": request.form.get("role", "")
+    })
+
+    member_id += 1
+    return redirect("/admin")
+
+
+@app.route("/admin/delete/<int:id>")
+@login_required(role="admin")
+def admin_delete(id):
+    global members
+    members = [m for m in members if m["id"] != id]
+    return redirect("/admin")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
+
+
+# ---------- RUN ----------
 if __name__ == "__main__":
-    app.run(debug=True, port=5000, host="0.0.0.0")
+    app.run(debug=True)
