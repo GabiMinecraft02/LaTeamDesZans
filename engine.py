@@ -46,11 +46,13 @@ def login():
             session["user"] = "admin"
             session["role"] = "admin"
             return redirect("/admin")
+            print("mot de passe admin entré")
 
         if password == MEMBER_PASSWORD:
             session["user"] = "member"
             session["role"] = "member"
             return redirect("/members")
+            print("mot de asse membres activvé")
 
     return render_template("login.html")
 
